@@ -4,11 +4,20 @@
 #include "freertos/timers.h"
 #include "esp_system.h"
 #include "Scheduler.c"
+#include "inc/global.h"
+#include "driver/gpio.h"
+#include "utilities/UtilityGPIO.c"
+#include "esp_log.h"
+
+bool 
+    flagLedCOM = false,
+    flagLedIN = false;
+
 
 void taskPrincipal(void * param) {
     while(1) {
 
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 
@@ -26,10 +35,6 @@ void taskWiFi(void * param) {
     }   
 }
 
-void timer1ms(TimerHandle_t xTimer) {
-    tarefas1ms();
-}
-
 void timer10ms(TimerHandle_t xTimer) {
     tarefas10ms();
 }
@@ -44,11 +49,21 @@ void timer1s(TimerHandle_t xTimer) {
 
 void app_main(void) {
     printf("Sistema iniciado\r\n");
+    esp_rom_gpio_pad_select_gpio(MOTOR_PWM);
+    gpio_set_direction(MOTOR_PWM, GPIO_MODE_OUTPUT);
+    esp_rom_gpio_pad_select_gpio(LED_CPU);
+    gpio_set_direction(LED_CPU, GPIO_MODE_OUTPUT);
+    esp_rom_gpio_pad_select_gpio(LED_COM);
+    gpio_set_direction(LED_COM, GPIO_MODE_OUTPUT);
+    esp_rom_gpio_pad_select_gpio(LED_IN);
+    gpio_set_direction(LED_IN, GPIO_MODE_OUTPUT);
+    esp_rom_gpio_pad_select_gpio(IN1);
+    gpio_set_direction(IN1, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(IN1, GPIO_PULLUP_ONLY);
+
     xTaskCreatePinnedToCore(&taskPrincipal, "Principal", 2048, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(&taskBluetooth, "Bluetooth", 2048, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(&taskWiFi, "WiFi", 2048, NULL, 1, NULL, 1);
-    TimerHandle_t xTimer1ms = xTimerCreate("timer1ms", pdMS_TO_TICKS(1), true, NULL, timer1ms);
-    xTimerStart(xTimer1ms, 0);
     TimerHandle_t xTimer10ms = xTimerCreate("timer10ms", pdMS_TO_TICKS(10), true, NULL, timer10ms);
     xTimerStart(xTimer10ms, 0);
     TimerHandle_t xTimer100ms = xTimerCreate("timer100ms", pdMS_TO_TICKS(100), true, NULL, timer100ms);
