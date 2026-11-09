@@ -3,11 +3,14 @@
 #include "freertos/task.h"
 #include "freertos/timers.h"
 #include "esp_system.h"
-#include "Scheduler.c"
-#include "inc/global.h"
-#include "driver/gpio.h"
-#include "utilities/UtilityGPIO.c"
 #include "esp_log.h"
+#include "driver/gpio.h"
+
+#include "inc/global.h"
+#include "Scheduler.c"
+#include "utilities/UtilityGPIO.c"
+#include "utilities/UtilityPWM.c"
+
 
 bool 
     flagLedCOM = false,
@@ -16,7 +19,7 @@ bool
 
 void taskPrincipal(void * param) {
     while(1) {
-
+        updatePWM(2000);
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
@@ -60,6 +63,7 @@ void app_main(void) {
     esp_rom_gpio_pad_select_gpio(IN1);
     gpio_set_direction(IN1, GPIO_MODE_INPUT);
     gpio_set_pull_mode(IN1, GPIO_PULLUP_ONLY);
+    pwmInit();
 
     xTaskCreatePinnedToCore(&taskPrincipal, "Principal", 2048, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(&taskBluetooth, "Bluetooth", 2048, NULL, 2, NULL, 1);
