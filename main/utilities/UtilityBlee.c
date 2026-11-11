@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
@@ -12,6 +11,7 @@
 #include "esp_gatt_common_api.h"
 
 #define BLE_DEVICE_NAME       "MOTOR_001"
+#define BLE_DEVICE_PASSWORD   123456
 
 #define GATTS_APP_ID          0
 
@@ -24,10 +24,9 @@
 
 static const char *TAG = "BLE_MOTOR";
 
-// --------------------------------------------------
-// Handles GATT
-// --------------------------------------------------
-
+/*==============================================================================
+Handles GATT
+==============================================================================*/
 static uint16_t service_handle;
 static uint16_t rx_handle;
 static uint16_t tx_handle;
@@ -41,10 +40,9 @@ static bool adv_ready = false;
 static bool notify_enabled = false;
 static bool link_secured = false;
 
-// --------------------------------------------------
-// Valores das characteristics
-// --------------------------------------------------
-
+/*==============================================================================
+Valores das characteristics
+==============================================================================*/
 static uint8_t rx_value[RX_MAX_LEN];
 
 static uint8_t tx_value[TX_MAX_LEN] = "READY";
@@ -61,10 +59,9 @@ static esp_attr_value_t tx_attr = {
     .attr_value = tx_value
 };
 
-// --------------------------------------------------
-// UUIDs
-// --------------------------------------------------
-
+/*==============================================================================
+UUIDs
+==============================================================================*/
 static esp_gatt_srvc_id_t service_id;
 
 static esp_bt_uuid_t rx_uuid = {
@@ -82,10 +79,9 @@ static esp_bt_uuid_t cccd_uuid = {
     .uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG
 };
 
-// --------------------------------------------------
-// Advertising
-// --------------------------------------------------
-
+/*==============================================================================
+Advertising
+==============================================================================*/
 static esp_ble_adv_params_t adv_params = {
     .adv_int_min       = 0x20,
     .adv_int_max       = 0x40,
@@ -103,34 +99,25 @@ static esp_ble_adv_data_t adv_data = {
                        ESP_BLE_ADV_FLAG_BREDR_NOT_SPT,
 };
 
-// --------------------------------------------------
-// Inicia advertising quando tudo estiver pronto
-// --------------------------------------------------
-
-static void iniciaAdvertising(void)
-{
-    if (gatt_ready && adv_ready)
-    {
+/*==============================================================================
+Inicia advertising quando tudo estiver pronto
+==============================================================================*/
+static void iniciaAdvertising(void) {
+    if(gatt_ready && adv_ready) {
         ESP_LOGI(TAG, "Iniciando advertising");
 
-        esp_err_t ret =
-            esp_ble_gap_start_advertising(&adv_params);
+        esp_err_t ret = esp_ble_gap_start_advertising(&adv_params);
 
-        if (ret != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Erro advertising: %s",
-                     esp_err_to_name(ret));
+        if(ret != ESP_OK) {
+            ESP_LOGE(TAG, "Erro advertising: %s", esp_err_to_name(ret));
         }
     }
 }
-
-// --------------------------------------------------
-// Configuração de segurança
-// --------------------------------------------------
-
-static void configuraSegurancaBLE(void)
-{
-    uint32_t passkey = 123456;
+/*==============================================================================
+Configuração de segurança
+==============================================================================*/
+static void configuraSegurancaBLE(void) {
+    uint32_t passkey = BLE_DEVICE_PASSWORD;
 
     uint8_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;
     uint8_t iocap = ESP_IO_CAP_OUT;
@@ -170,11 +157,11 @@ static void configuraSegurancaBLE(void)
 
     ESP_LOGI(TAG, "Seguranca BLE configurada");
 }
-
-void enviaRespostaBLE(const char *mensagem)
-{
-    if (!link_secured || !notify_enabled)
-    {
+/*==============================================================================
+Envio de Resposta Blee
+==============================================================================*/
+void enviaRespostaBLE(const char *mensagem) {
+    if(!link_secured || !notify_enabled) {
         ESP_LOGW(TAG, "BLE nao seguro ou notificacao desabilitada");
         return;
     }
@@ -188,85 +175,58 @@ void enviaRespostaBLE(const char *mensagem)
         false
     );
 
-    if (ret == ESP_OK)
-    {
+    if(ret == ESP_OK) {
         ESP_LOGI(TAG, "Resposta BLE enviada: %s", mensagem);
     }
-    else
-    {
-        ESP_LOGE(TAG, "Erro ao enviar resposta BLE: %s",
-                 esp_err_to_name(ret));
+    else {
+        ESP_LOGE(TAG, "Erro ao enviar resposta BLE: %s", esp_err_to_name(ret));
     }
 }
-
-// --------------------------------------------------
-// Callback GAP
-// --------------------------------------------------
-
-static void gap_callback(
-    esp_gap_ble_cb_event_t event,
-    esp_ble_gap_cb_param_t *param)
-{
-    switch (event)
-    {
+/*==============================================================================
+Callback GAP
+==============================================================================*/
+static void gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
+    switch (event) {
         case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-
-            if (param->adv_data_cmpl.status == ESP_BT_STATUS_SUCCESS)
-            {
+            if(param->adv_data_cmpl.status == ESP_BT_STATUS_SUCCESS) {
                 ESP_LOGI(TAG, "Advertising data configurado");
-
                 adv_ready = true;
                 iniciaAdvertising();
             }
-            else
-            {
+            else {
                 ESP_LOGE(TAG, "Erro ao configurar advertising data");
             }
 
             break;
 
         case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
-
-            if (param->adv_start_cmpl.status == ESP_BT_STATUS_SUCCESS)
-            {
+            if(param->adv_start_cmpl.status == ESP_BT_STATUS_SUCCESS) {
                 ESP_LOGI(TAG, "Advertising iniciado");
             }
-            else
-            {
+            else {
                 ESP_LOGE(TAG, "Falha ao iniciar advertising");
             }
 
             break;
 
         case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
-
-            ESP_LOGI(TAG, "Passkey: %06" PRIu32,
-                     param->ble_security.key_notif.passkey);
+            ESP_LOGI(TAG, "Passkey: %06" PRIu32, param->ble_security.key_notif.passkey);
 
             break;
 
         case ESP_GAP_BLE_SEC_REQ_EVT:
-
             ESP_LOGI(TAG, "Solicitacao de seguranca recebida");
-
-            esp_ble_gap_security_rsp(
-                param->ble_security.ble_req.bd_addr,
-                true
-            );
+            esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
 
             break;
 
         case ESP_GAP_BLE_AUTH_CMPL_EVT:
-
-            if (param->ble_security.auth_cmpl.success)
-            {
+            if(param->ble_security.auth_cmpl.success) {
                 link_secured = true;
                 ESP_LOGI(TAG, "Pareamento realizado com sucesso");
             }
-            else
-            {
-                ESP_LOGE(TAG, "Falha no pareamento: 0x%x",
-                         param->ble_security.auth_cmpl.fail_reason);
+            else {
+                ESP_LOGE(TAG, "Falha no pareamento: 0x%x", param->ble_security.auth_cmpl.fail_reason);
                 link_secured = false;
             }
 
@@ -276,34 +236,20 @@ static void gap_callback(
             break;
     }
 }
-
-// --------------------------------------------------
-// Callback GATTS
-// --------------------------------------------------
-
-static void gatts_callback(
-    esp_gatts_cb_event_t event,
-    esp_gatt_if_t gatts_if,
-    esp_ble_gatts_cb_param_t *param)
-{
+/*==============================================================================
+Callback GATTS
+==============================================================================*/
+static void gatts_callback(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
     esp_err_t ret;
 
-    switch (event)
-    {
-        // ------------------------------------------
-        // Registro da aplicação GATT
-        // ------------------------------------------
-
-        case ESP_GATTS_REG_EVT:
-
-            if (param->reg.status != ESP_GATT_OK)
-            {
+    switch (event) {
+        case ESP_GATTS_REG_EVT: //Registro da aplicação GATT
+            if(param->reg.status != ESP_GATT_OK) {
                 ESP_LOGE(TAG, "Erro no registro GATT");
                 break;
             }
 
             gatts_interface = gatts_if;
-
             ESP_LOGI(TAG, "Aplicacao GATT registrada");
 
             service_id.is_primary = true;
@@ -311,22 +257,13 @@ static void gatts_callback(
             service_id.id.uuid.len = ESP_UUID_LEN_16;
             service_id.id.uuid.uuid.uuid16 = SERVICE_UUID;
 
-            ret = esp_ble_gatts_create_service(
-                gatts_if,
-                &service_id,
-                8
-            );
+            ret = esp_ble_gatts_create_service(gatts_if, &service_id, 8);
 
             ESP_ERROR_CHECK(ret);
 
             break;
 
-        // ------------------------------------------
-        // Serviço criado
-        // ------------------------------------------
-
-        case ESP_GATTS_CREATE_EVT:
-
+        case ESP_GATTS_CREATE_EVT: //Serviço criado
             ESP_LOGI(TAG, "Servico criado");
 
             service_handle = param->create.service_handle;
@@ -348,20 +285,13 @@ static void gatts_callback(
 
             break;
 
-        // ------------------------------------------
-        // Characteristic criada
-        // ------------------------------------------
-
-        case ESP_GATTS_ADD_CHAR_EVT:
-
-            if (param->add_char.status != ESP_GATT_OK)
-            {
+        case ESP_GATTS_ADD_CHAR_EVT: //Characteristic criada
+            if(param->add_char.status != ESP_GATT_OK) {
                 ESP_LOGE(TAG, "Erro ao criar characteristic");
                 break;
             }
 
-            if (param->add_char.char_uuid.uuid.uuid16 == CHAR_UUID_RX)
-            {
+            if(param->add_char.char_uuid.uuid.uuid16 == CHAR_UUID_RX) {
                 rx_handle = param->add_char.attr_handle;
 
                 ESP_LOGI(TAG, "Characteristic RX criada");
@@ -379,8 +309,7 @@ static void gatts_callback(
 
                 ESP_ERROR_CHECK(ret);
             }
-            else if (param->add_char.char_uuid.uuid.uuid16 == CHAR_UUID_TX)
-            {
+            else if(param->add_char.char_uuid.uuid.uuid16 == CHAR_UUID_TX) {
                 tx_handle = param->add_char.attr_handle;
 
                 ESP_LOGI(TAG, "Characteristic TX criada");
@@ -400,12 +329,7 @@ static void gatts_callback(
 
             break;
 
-        // ------------------------------------------
-        // Descriptor criado
-        // ------------------------------------------
-
-        case ESP_GATTS_ADD_CHAR_DESCR_EVT:
-
+        case ESP_GATTS_ADD_CHAR_DESCR_EVT: //Descriptor criado
             cccd_handle = param->add_char_descr.attr_handle;
 
             ESP_LOGI(TAG, "Descriptor CCCD criado");
@@ -416,12 +340,7 @@ static void gatts_callback(
 
             break;
 
-        // ------------------------------------------
-        // Conexão BLE
-        // ------------------------------------------
-
-        case ESP_GATTS_CONNECT_EVT:
-
+        case ESP_GATTS_CONNECT_EVT: //Conexão BLE
             conn_id = param->connect.conn_id;
             notify_enabled = false;
 
@@ -433,20 +352,13 @@ static void gatts_callback(
                 ESP_BLE_SEC_ENCRYPT_MITM
             );
 
-            if (ret != ESP_OK)
-            {
-                ESP_LOGE(TAG, "Erro ao solicitar criptografia: %s",
-                         esp_err_to_name(ret));
+            if(ret != ESP_OK) {
+                ESP_LOGE(TAG, "Erro ao solicitar criptografia: %s", esp_err_to_name(ret));
             }
 
             break;
 
-        // ------------------------------------------
-        // Desconexão BLE
-        // ------------------------------------------
-
-        case ESP_GATTS_DISCONNECT_EVT:
-
+        case ESP_GATTS_DISCONNECT_EVT: //Desconexão BLE
             ESP_LOGI(TAG, "Celular desconectado");
 
             notify_enabled = false;
@@ -456,30 +368,17 @@ static void gatts_callback(
 
             break;
 
-        // ------------------------------------------
-        // Leitura de characteristic
-        // ------------------------------------------
-
-        case ESP_GATTS_READ_EVT:
-
+        case ESP_GATTS_READ_EVT: //Leitura de characteristic
             ESP_LOGI(TAG, "Characteristic lida");
-
             break;
 
-        // ------------------------------------------
-        // Escrita de characteristic
-        // ------------------------------------------
-
-        case ESP_GATTS_WRITE_EVT:
-
-            if (param->write.handle == rx_handle)
-            {
+        case ESP_GATTS_WRITE_EVT: //Escrita de characteristic
+            if(param->write.handle == rx_handle) { //aqui recebe os dados
                 ESP_LOGI(TAG, "Dados recebidos pela RX:");
                 /*ESP_LOG_BUFFER_HEX(TAG,
                                    param->write.value,
                                    param->write.len);*/
                 
-                //aqui recebe os dados
                 ESP_LOG_BUFFER_CHAR(TAG,
                                 param->write.value,
                                 param->write.len);
@@ -487,12 +386,9 @@ static void gatts_callback(
                 enviaRespostaBLE("Teste 1234");
             }
 
-            else if (param->write.handle == cccd_handle)
-            {
+            else if(param->write.handle == cccd_handle) { //notificações
                 uint16_t cccd_value = 0;
-
-                if (param->write.len >= 2)
-                {
+                if (param->write.len >= 2) {
                     cccd_value =
                         param->write.value[0] |
                         (param->write.value[1] << 8);
@@ -500,11 +396,9 @@ static void gatts_callback(
 
                 notify_enabled = (cccd_value & 0x0001) != 0;
 
-                ESP_LOGI(TAG, "Notificacoes: %s",
-                         notify_enabled ? "HABILITADAS" : "DESABILITADAS");
+                ESP_LOGI(TAG, "Notificacoes: %s", notify_enabled ? "HABILITADAS" : "DESABILITADAS");
 
-                if (notify_enabled)
-                {
+                if(notify_enabled) {
                     const uint8_t msg[] = "BLE_READY";
 
                     esp_ble_gatts_send_indicate(
@@ -518,7 +412,7 @@ static void gatts_callback(
                 }
             }
 
-            if(param->write.need_rsp == true) {
+            if(param->write.need_rsp == true) { //ack
                 esp_err_t ret = esp_ble_gatts_send_response(
                     gatts_if,
                     param->write.conn_id,
@@ -527,14 +421,12 @@ static void gatts_callback(
                     NULL
                 );
 
-                if (ret != ESP_OK)
-                {
+                if(ret != ESP_OK) {
                     ESP_LOGE(TAG,
                             "Erro ao responder WRITE: %s",
                             esp_err_to_name(ret));
                 }
-                else
-                {
+                else {
                     ESP_LOGI(TAG, "WRITE GATT ACK enviado");
                 }
             }
@@ -546,6 +438,9 @@ static void gatts_callback(
     }
 }
 
+/*==============================================================================
+Configura Blee
+==============================================================================*/
 void configuraBlee(void) {
     esp_err_t ret;
 
