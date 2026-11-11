@@ -2,6 +2,7 @@
 #include "inc/global.h"
 #include "driver/ledc.h"
 
+
 void pwmInit() {
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,

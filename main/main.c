@@ -5,11 +5,16 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "nvs_flash.h"
+#include "esp_err.h"
+#include "esp_log.h"
+
 
 #include "inc/global.h"
 #include "Scheduler.c"
 #include "utilities/UtilityGPIO.c"
 #include "utilities/UtilityPWM.c"
+#include "utilities/UtilityBlee.c"
 
 
 bool 
@@ -50,6 +55,17 @@ void timer1s(TimerHandle_t xTimer) {
     tarefas1s();
 }
 
+void iniciaNVSFlash() {
+    esp_err_t ret = nvs_flash_init();
+
+    if(ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {       
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+
+    ESP_ERROR_CHECK(ret);
+}
+
 void app_main(void) {
     printf("Sistema iniciado\r\n");
     esp_rom_gpio_pad_select_gpio(MOTOR_PWM);
@@ -63,7 +79,9 @@ void app_main(void) {
     esp_rom_gpio_pad_select_gpio(IN1);
     gpio_set_direction(IN1, GPIO_MODE_INPUT);
     gpio_set_pull_mode(IN1, GPIO_PULLUP_ONLY);
+    iniciaNVSFlash();
     pwmInit();
+    configuraBlee();
 
     xTaskCreatePinnedToCore(&taskPrincipal, "Principal", 2048, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(&taskBluetooth, "Bluetooth", 2048, NULL, 2, NULL, 1);
