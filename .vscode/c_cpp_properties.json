@@ -3,7 +3,7 @@
     {
       "name": "ESP-IDF",
       "compilerPath": "",
-      "compileCommands": "d:\\Firmwares\\Automasensor\\ModuloPotenciaWFBL\\ModuloPotenciaWFBL\\build\\default\\compile_commands.json",
+      "compileCommands": "d:\\Firmwares\\Automasensor\\ModuloPotenciaWFBL\\ModuloPotenciaWFBL\\build\\compile_commands.json",
       "intelliSenseMode": "gcc-x86",
       "includePath": [
         "${workspaceFolder}/**"

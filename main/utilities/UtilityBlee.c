@@ -10,6 +10,8 @@
 #include "esp_gatts_api.h"
 #include "esp_gatt_common_api.h"
 
+#include "inc/SubrotinasBlee.h"
+
 #define BLE_DEVICE_NAME       "MOTOR_001"
 #define BLE_DEVICE_PASSWORD   123456
 
@@ -382,6 +384,15 @@ static void gatts_callback(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, e
                 ESP_LOG_BUFFER_CHAR(TAG,
                                 param->write.value,
                                 param->write.len);
+
+                if(param->write.len < sizeof(bufferBleeRX)) {
+                    memcpy(bufferBleeRX,
+                            param->write.value,
+                            param->write.len);
+
+                    // Adiciona terminador de string
+                    bufferBleeRX[param->write.len] = '\0';
+                }
 
                 enviaRespostaBLE("Teste 1234");
             }

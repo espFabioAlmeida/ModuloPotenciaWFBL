@@ -12,14 +12,28 @@
 
 #include "inc/global.h"
 #include "Scheduler.c"
+#include "Utils.c"
 #include "utilities/UtilityGPIO.c"
 #include "utilities/UtilityPWM.c"
 #include "utilities/UtilityBlee.c"
+
+#include "subrotinas/SubrotinasBlee.c"
 
 
 bool 
     flagLedCOM = false,
     flagLedIN = false;
+
+uint8_t 
+    modoOperacaoWifi = MODO_ESTACAO,
+    numeroMotor = MOTOR_NAO_CONFIGURADO;
+
+char 
+    bufferBleeRX[BUFFER_RX_SIZE],
+    bufferBleeTX[BUFFER_TX_SIZE],
+
+    wifiSSID[WIFI_SSID_SIZE],
+    wifiPass[WIFI_PASS_SIZE];
 
 
 void taskPrincipal(void * param) {
